@@ -1,9 +1,9 @@
 import React from 'react';
 
 // Glass card
-export function Glass({ children, style = {}, onClick }) {
+export function Glass({ children, style = {}, className = '', onClick }) {
   return (
-    <div onClick={onClick} style={{
+    <div className={className} onClick={onClick} style={{
       background: 'linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.18))',
       backdropFilter: 'blur(24px)',
       WebkitBackdropFilter: 'blur(24px)',

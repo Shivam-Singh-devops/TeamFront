@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { taskApi } from './api';
 import { Glass, PageHeader } from './components';
@@ -64,10 +65,26 @@ export default function DashboardPage({ token, projects }) {
 
       {/* Stat cards */}
       <div className="dashboard-stat-grid">
-        <StatCard icon="📁" val={projects.length} label="Total Projects" color="#3b82f6" delay={0} />
-        <StatCard icon="✅" val={stats?.completedTasks ?? '…'} label="Completed" color="#34d399" delay={0.05} />
-        <StatCard icon="⚡" val={stats?.inProgressTasks ?? '…'} label="In Progress" color="#fbbf24" delay={0.10} />
-        <StatCard icon="👥" val={stats?.teamMembers ?? '…'} label="Team Members" color="#a78bfa" delay={0.15} />
+        <Glass className="dashboard-stat-card" style={{ padding: 18, position: 'relative', overflow: 'hidden', animation: 'slideUp 0.4s ease 0s both', background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85))', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="dashboard-stat-icon">📁</div>
+          <div className="dashboard-stat-value">{projects.length}</div>
+          <div className="dashboard-stat-label">Total Projects</div>
+        </Glass>
+        <Glass className="dashboard-stat-card" style={{ padding: 18, position: 'relative', overflow: 'hidden', animation: 'slideUp 0.4s ease 0.05s both', background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85))', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="dashboard-stat-icon">✅</div>
+          <div className="dashboard-stat-value">{stats?.completedTasks ?? '…'}</div>
+          <div className="dashboard-stat-label">Completed</div>
+        </Glass>
+        <Glass className="dashboard-stat-card" style={{ padding: 18, position: 'relative', overflow: 'hidden', animation: 'slideUp 0.4s ease 0.1s both', background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85))', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="dashboard-stat-icon">⚡</div>
+          <div className="dashboard-stat-value">{stats?.inProgressTasks ?? '…'}</div>
+          <div className="dashboard-stat-label">In Progress</div>
+        </Glass>
+        <Glass className="dashboard-stat-card" style={{ padding: 18, position: 'relative', overflow: 'hidden', animation: 'slideUp 0.4s ease 0.15s both', background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85))', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="dashboard-stat-icon">👥</div>
+          <div className="dashboard-stat-value">{stats?.teamMembers ?? '…'}</div>
+          <div className="dashboard-stat-label">Team Members</div>
+        </Glass>
       </div>
 
       {/* Charts */}
@@ -96,10 +113,10 @@ export default function DashboardPage({ token, projects }) {
         <Glass className="dashboard-chart-card">
           <div className="dashboard-chart-title">📈 Tasks by Project</div>
           {barData.length > 0 ? (
-            <div style={{ flex: 1, minHeight: 260 }}>
+            <div style={{ flex: 1, minHeight: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} barSize={12}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#4a7ab5' }} axisLine={false} tickLine={false} />
+                <BarChart data={barData} barSize={16} margin={{ top: 12, right: 18, left: 10, bottom: 28 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#4a7ab5' }} axisLine={false} tickLine={false} interval={0} />
                   <YAxis tick={{ fontSize: 11, fill: '#4a7ab5' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontFamily: "'Inter', sans-serif" }} />

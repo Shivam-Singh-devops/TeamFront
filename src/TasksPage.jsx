@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
 import { taskApi, projectApi, STATUS_COLORS, fmtDate } from './api';
 import { Glass, Btn, Field, Input, Select, Modal, Alert, Empty, PageHeader, SectionHeader, StatusBadge, Spinner } from './components';
 

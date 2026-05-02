@@ -266,7 +266,8 @@
 // }
 
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
 import { apiCall, fmtDate, STATUS_COLORS } from './api';
 import { Glass, Empty, PageHeader, StatusBadge, Spinner } from './components';
 

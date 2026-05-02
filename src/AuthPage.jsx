@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
 import { apiCall } from './api';
 import { Glass, Btn, Field, Input, Select, Alert, BgOrbs, Spinner } from './components';
 

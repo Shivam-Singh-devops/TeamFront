@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
 import { projectApi } from './api';
 import { Glass, Btn, Field, Input, Modal, Alert, Empty, PageHeader, SectionHeader, Spinner } from './components';
 

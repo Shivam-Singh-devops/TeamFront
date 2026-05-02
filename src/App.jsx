@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
 import { projectApi } from './api';
 import { BgOrbs } from './components';
 import AuthPage from './AuthPage';
