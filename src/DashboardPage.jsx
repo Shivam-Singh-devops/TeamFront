@@ -5,11 +5,11 @@ import { Glass, PageHeader } from './components';
 
 function StatCard({ icon, val, label, color, delay = 0 }) {
   return (
-    <Glass style={{ padding: 20, position: 'relative', overflow: 'hidden', animation: `slideUp 0.4s ease ${delay}s both`, background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85))', border: '1px solid rgba(255,255,255,0.1)' }}>
-      <div style={{ fontSize: 24, marginBottom: 10 }}>{icon}</div>
-      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 26, fontWeight: 800, color: '#ffffff', lineHeight: 1 }}>{val}</div>
-      <div style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ position: 'absolute', bottom: -16, right: -16, width: 60, height: 60, borderRadius: '50%', background: color, opacity: 0.25 }} />
+    <Glass style={{ padding: 32, position: 'relative', overflow: 'hidden', animation: `slideUp 0.4s ease ${delay}s both`, background: 'linear-gradient(180deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85))', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ fontSize: 32, marginBottom: 16 }}>{icon}</div>
+      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 36, fontWeight: 800, color: '#ffffff', lineHeight: 1 }}>{val}</div>
+      <div style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 500, marginTop: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      <div style={{ position: 'absolute', bottom: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: color, opacity: 0.25 }} />
     </Glass>
   );
 }
@@ -63,7 +63,7 @@ export default function DashboardPage({ token, projects }) {
       <PageHeader title="Dashboard 🏠" sub="Here's what's happening across all your projects" />
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
         <StatCard icon="📁" val={projects.length} label="Total Projects" color="#3b82f6" delay={0} />
         <StatCard icon="✅" val={stats?.completedTasks ?? '…'} label="Completed" color="#34d399" delay={0.05} />
         <StatCard icon="⚡" val={stats?.inProgressTasks ?? '…'} label="In Progress" color="#fbbf24" delay={0.10} />
@@ -71,46 +71,42 @@ export default function DashboardPage({ token, projects }) {
       </div>
 
       {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 24, alignItems: 'stretch' }}>
-        <Glass style={{ padding: 20, minHeight: 320, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700, color: '#1e3a5f', marginBottom: 16 }}>📊 Task Distribution</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+        <Glass style={{ padding: 24 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 20 }}>📊 Task Distribution</div>
           {pieData.length > 0 ? (
-            <div style={{ flex: 1, minHeight: 240 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={4} dataKey="value">
-                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} stroke="none" />)}
-                  </Pie>
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontFamily: "'Inter', sans-serif" }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={4} dataKey="value">
+                  {pieData.map((entry, i) => <Cell key={i} fill={entry.color} stroke="none" />)}
+                </Pie>
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 13, fontFamily: "'Inter', sans-serif" }} />
+              </PieChart>
+            </ResponsiveContainer>
           ) : (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#60a5fa', fontSize: 14, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#60a5fa', fontSize: 14 }}>
               <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>No task data yet
             </div>
           )}
         </Glass>
 
-        <Glass style={{ padding: 20, minHeight: 320, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 700, color: '#1e3a5f', marginBottom: 16 }}>📈 Tasks by Project</div>
+        <Glass style={{ padding: 24 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 20 }}>📈 Tasks by Project</div>
           {barData.length > 0 ? (
-            <div style={{ flex: 1, minHeight: 240 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} barSize={12}>
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#4a7ab5' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: '#4a7ab5' }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: 11, fontFamily: "'Inter', sans-serif" }} />
-                  <Bar dataKey="To Do" fill="#60a5fa" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="In Progress" fill="#fbbf24" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="Done" fill="#34d399" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={barData} barSize={12}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#4a7ab5' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#4a7ab5' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontFamily: "'Inter', sans-serif" }} />
+                <Bar dataKey="To Do" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="In Progress" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Done" fill="#34d399" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           ) : (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#60a5fa', fontSize: 14, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#60a5fa', fontSize: 14 }}>
               <div style={{ fontSize: 36, marginBottom: 8 }}>📊</div>No data yet
             </div>
           )}

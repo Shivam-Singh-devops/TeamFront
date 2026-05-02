@@ -153,28 +153,43 @@ export default function TasksPage({ token, projects }) {
           ) : tasks.length === 0 ? (
             <Glass><Empty icon="📋" title="No tasks yet" sub="Add your first task to this project" /></Glass>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {tasks.map((t, i) => (
-                <Glass key={t.id} style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.2s', animation: `slideUp 0.3s ease ${i * 0.04}s both` }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
+                <Glass key={t.id} style={{ padding: '22px 22px 18px', transition: 'all 0.2s', animation: `slideUp 0.3s ease ${i * 0.04}s both` }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: STATUS_COLORS[t.status] || '#60a5fa', flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: '#1e3a5f', fontSize: 15, marginBottom: 4 }}>{t.title}</div>
-                    <div style={{ fontSize: 13, color: '#4a7ab5', marginBottom: 4, lineHeight: 1.4 }}>{t.description || 'No description'}</div>
-                    <div style={{ fontSize: 12, color: '#60a5fa' }}>👤 {t.assignedPersonName}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0, minHeight: 60 }}>
+                      <div style={{ fontWeight: 700, color: '#0f172a', fontSize: 15, marginBottom: 6, lineHeight: 1.35 }}>{t.title}</div>
+                      <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.7 }}>{t.description || 'No description'}</div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, minWidth: 140 }}>
+                      <StatusBadge status={t.status} />
+                      <div style={{ fontSize: 12, color: t.isOverdue ? '#b91c1c' : '#475569', fontWeight: t.isOverdue ? 700 : 500, textAlign: 'right' }}>
+                        📅 {fmtDate(t.dueDate)}{t.isOverdue ? ' (Overdue)' : ''}
+                      </div>
+                    </div>
                   </div>
-                  <StatusBadge status={t.status} />
-                  <div style={{ fontSize: 12, color: t.isOverdue ? '#ef4444' : '#60a5fa', flexShrink: 0, fontWeight: t.isOverdue ? 600 : 400, marginLeft: 8 }}>
-                    📅 {fmtDate(t.dueDate)}{t.isOverdue && ' (Overdue)'}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 8 }}>
-                    <Btn variant="ghost" onClick={() => toggleTaskStatus(t.id, t.status)} size="sm" style={{ padding: '8px 12px', borderRadius: 9 }}>
-                      {t.status === 'TODO' ? '▶️' : t.status === 'IN_PROGRESS' ? '⏸️' : '✅'}
-                    </Btn>
-                    <Btn variant="ghost" onClick={() => openEdit(t)} size="sm" style={{ padding: '8px 12px', borderRadius: 9 }}>✏️</Btn>
-                    <Btn variant="danger" onClick={() => deleteTask(t.id)} size="sm" style={{ padding: '8px 12px', borderRadius: 9 }}>🗑️</Btn>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', color: '#2563eb', fontSize: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999, background: 'rgba(37,99,235,0.08)' }}>
+                        👤 {t.assignedPersonName || 'Unassigned'}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999, background: 'rgba(148,163,184,0.12)', color: '#475569' }}>
+                        {t.status === 'TODO' ? 'To Do' : t.status === 'IN_PROGRESS' ? 'In Progress' : 'Completed'}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      <Btn variant="ghost" onClick={() => toggleTaskStatus(t.id, t.status)} size="sm" style={{ padding: '8px 12px', borderRadius: 10, fontSize: 12 }}>
+                        {t.status === 'TODO' ? '▶️ Start' : t.status === 'IN_PROGRESS' ? '✅ Done' : '🔁 Reopen'}
+                      </Btn>
+                      <Btn variant="ghost" onClick={() => openEdit(t)} size="sm" style={{ padding: '8px 12px', borderRadius: 10, fontSize: 12 }}>✏️ Edit</Btn>
+                      <Btn variant="danger" onClick={() => deleteTask(t.id)} size="sm" style={{ padding: '8px 12px', borderRadius: 10, fontSize: 12 }}>🗑️ Delete</Btn>
+                    </div>
                   </div>
                 </Glass>
               ))}
