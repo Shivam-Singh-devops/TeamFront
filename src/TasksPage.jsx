@@ -1,0 +1,172 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { apiCall, fmtDate, STATUS_COLORS } from './api';
+import { Glass, Btn, Field, Input, Select, Modal, Alert, Empty, PageHeader, SectionHeader, StatusBadge, Spinner } from './components';
+
+export default function TasksPage({ token, projects }) {
+  const [selProject, setSelProject] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editTask, setEditTask] = useState(null);
+  const [form, setForm] = useState({ title: '', description: '', assignedToUserId: '', dueDate: '', status: 'TODO' });
+  const [loading, setLoading] = useState(false);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const loadTasks = useCallback(async (pid) => {
+    setTasksLoading(true);
+    try {
+      const [t, s] = await Promise.all([
+        apiCall(`/tasks/projects/${pid}`, 'GET', null, token),
+        apiCall(`/tasks/projects/${pid}/stats`, 'GET', null, token),
+      ]);
+      setTasks(Array.isArray(t) ? t : []);
+      setStats(s);
+    } catch { setTasks([]); setStats(null); }
+    finally { setTasksLoading(false); }
+  }, [token]);
+
+  useEffect(() => { if (selProject) loadTasks(selProject.id); }, [selProject, loadTasks]);
+
+  const resetForm = () => setForm({ title: '', description: '', assignedToUserId: '', dueDate: '', status: 'TODO' });
+
+  async function createTask() {
+    if (!form.title.trim()) return setErr('Title is required.');
+    setLoading(true); setErr('');
+    try {
+      await apiCall(`/tasks/projects/${selProject.id}`, 'POST', {
+        title: form.title, description: form.description,
+        assignedToUserId: form.assignedToUserId ? Number(form.assignedToUserId) : undefined,
+        dueDate: form.dueDate || undefined,
+      }, token);
+      setShowCreate(false); resetForm(); loadTasks(selProject.id);
+    } catch (e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function updateTask() {
+    setLoading(true); setErr('');
+    try {
+      await apiCall(`/tasks/${editTask.id}`, 'PUT', {
+        title: form.title, description: form.description, status: form.status,
+        assignedToUserId: form.assignedToUserId ? Number(form.assignedToUserId) : undefined,
+        dueDate: form.dueDate || undefined,
+      }, token);
+      setEditTask(null); loadTasks(selProject.id);
+    } catch (e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function deleteTask(id) {
+    if (!window.confirm('Delete this task?')) return;
+    try { await apiCall(`/tasks/${id}`, 'DELETE', null, token); loadTasks(selProject.id); }
+    catch (e) { alert(e.message); }
+  }
+
+  function openEdit(t) {
+    setEditTask(t);
+    setForm({ title: t.title, description: t.description || '', assignedToUserId: t.assignedToUserId || '', dueDate: t.dueDate ? t.dueDate.slice(0, 16) : '', status: t.status || 'TODO' });
+    setErr('');
+  }
+
+  return (
+    <div style={{ animation: 'slideUp 0.4s ease' }}>
+      <PageHeader title="Tasks 📋" sub="Create and manage tasks across your projects" />
+
+      {/* Project selector */}
+      <Glass style={{ padding: '16px 20px', marginBottom: 24 }}>
+        <Field label="Select Project" >
+          <Select value={selProject?.id || ''} onChange={e => { const p = projects.find(x => String(x.id) === e.target.value); setSelProject(p || null); setTasks([]); setStats(null); }}>
+            <option value="">— Choose a project —</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </Select>
+        </Field>
+      </Glass>
+
+      {selProject ? (
+        <>
+          {/* Mini stats */}
+          {stats && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+              {[
+                { l: 'Total', v: stats.totalTasks, c: '#3b82f6' },
+                { l: 'To Do', v: stats.todoTasks, c: '#60a5fa' },
+                { l: 'In Progress', v: stats.inProgressTasks, c: '#fbbf24' },
+                { l: 'Completed', v: stats.completedTasks, c: '#34d399' },
+              ].map((s, i) => (
+                <Glass key={i} style={{ padding: '14px 18px' }}>
+                  <div style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 800, color: s.c }}>{s.v}</div>
+                  <div style={{ fontSize: 11, color: '#4a7ab5', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 3 }}>{s.l}</div>
+                </Glass>
+              ))}
+            </div>
+          )}
+
+          <SectionHeader
+            title={`Tasks in "${selProject.name}"`}
+            action={<Btn size="sm" onClick={() => { setShowCreate(true); resetForm(); setErr(''); }} style={{ borderRadius: 11 }}>+ Add Task</Btn>}
+          />
+
+          {tasksLoading ? (
+            <div style={{ textAlign: 'center', padding: 48, color: '#60a5fa' }}>
+              <Spinner /> <span style={{ marginLeft: 10 }}>Loading tasks…</span>
+            </div>
+          ) : tasks.length === 0 ? (
+            <Glass><Empty icon="📋" title="No tasks yet" sub="Add your first task to this project" /></Glass>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {tasks.map((t, i) => (
+                <Glass key={t.id} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s', animation: `slideUp 0.3s ease ${i * 0.04}s both` }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
+                >
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: STATUS_COLORS[t.status] || '#60a5fa', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, color: '#1e3a5f', fontSize: 14, marginBottom: 2 }}>{t.title}</div>
+                    <div style={{ fontSize: 12, color: '#4a7ab5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.description || 'No description'}</div>
+                  </div>
+                  <StatusBadge status={t.status} />
+                  <div style={{ fontSize: 11, color: '#60a5fa', flexShrink: 0 }}>📅 {fmtDate(t.dueDate)}</div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <Btn variant="ghost" onClick={() => openEdit(t)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>✏️</Btn>
+                    <Btn variant="danger" onClick={() => deleteTask(t.id)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>🗑️</Btn>
+                  </div>
+                </Glass>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        projects.length > 0 && (
+          <Glass><Empty icon="👆" title="Select a project" sub="Choose a project above to view and manage its tasks" /></Glass>
+        )
+      )}
+
+      {/* Create / Edit Modal */}
+      {(showCreate || editTask) && (
+        <Modal title={editTask ? '✏️ Edit Task' : '✨ New Task'} onClose={() => { setShowCreate(false); setEditTask(null); }}>
+          {err && <Alert>{err}</Alert>}
+          <Field label="Title"><Input placeholder="Design Homepage" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></Field>
+          <Field label="Description"><Input placeholder="Task details…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></Field>
+          <Field label="Assigned To (User ID)"><Input type="number" placeholder="2" value={form.assignedToUserId} onChange={e => setForm(f => ({ ...f, assignedToUserId: e.target.value }))} /></Field>
+          <Field label="Due Date"><Input type="datetime-local" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} /></Field>
+          {editTask && (
+            <Field label="Status">
+              <Select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                <option value="TODO">To Do</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+              </Select>
+            </Field>
+          )}
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <Btn variant="ghost" onClick={() => { setShowCreate(false); setEditTask(null); }} style={{ flex: 1 }}>Cancel</Btn>
+            <Btn onClick={editTask ? updateTask : createTask} disabled={loading} style={{ flex: 1 }}>
+              {loading ? <Spinner /> : editTask ? 'Save Changes' : 'Create Task'}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}

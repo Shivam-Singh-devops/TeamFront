@@ -1,0 +1,111 @@
+import React, { useState } from 'react';
+import { apiCall } from './api';
+import { Glass, Btn, Field, Input, Modal, Alert, Empty, PageHeader, SectionHeader, Spinner } from './components';
+
+export default function ProjectsPage({ token, projects, onRefresh }) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [showMember, setShowMember] = useState(null);
+  const [form, setForm] = useState({ name: '', description: '' });
+  const [memberEmail, setMemberEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function createProject() {
+    if (!form.name.trim()) return setErr('Project name is required.');
+    setLoading(true); setErr('');
+    try {
+      await apiCall('/projects', 'POST', form, token);
+      setShowCreate(false); setForm({ name: '', description: '' }); onRefresh();
+    } catch (e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function deleteProject(id) {
+    if (!window.confirm('Delete this project and all its tasks?')) return;
+    try { await apiCall(`/projects/${id}`, 'DELETE', null, token); onRefresh(); }
+    catch (e) { alert(e.message); }
+  }
+
+  async function addMember() {
+    if (!memberEmail.trim()) return setErr('Email is required.');
+    setLoading(true); setErr('');
+    try {
+      await apiCall(`/projects/${showMember}/members`, 'POST', { email: memberEmail }, token);
+      setShowMember(null); setMemberEmail(''); onRefresh();
+    } catch (e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div style={{ animation: 'slideUp 0.4s ease' }}>
+      <PageHeader title="Projects 📁" sub="All your projects in one place" />
+      <SectionHeader
+        title={`All Projects (${projects.length})`}
+        action={<Btn onClick={() => { setShowCreate(true); setErr(''); }} size="sm" style={{ borderRadius: 11 }}>+ New Project</Btn>}
+      />
+
+      {projects.length === 0 ? (
+        <Glass><Empty icon="📁" title="No projects yet" sub="Create your first project to get started" /></Glass>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 16 }}>
+          {projects.map((p, i) => (
+            <Glass key={p.id} style={{ padding: 22, cursor: 'default', transition: 'all 0.25s', animation: `slideUp 0.4s ease ${i * 0.05}s both` }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 17, fontWeight: 700, color: '#1e3a5f', marginBottom: 6 }}>{p.name}</div>
+              <div style={{ fontSize: 13, color: '#4a7ab5', lineHeight: 1.5, marginBottom: 14, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {p.description || 'No description provided.'}
+              </div>
+              <div style={{ marginBottom: 14, minHeight: 28 }}>
+                {(p.members || []).slice(0, 3).map((m, j) => (
+                  <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', fontSize: 11, color: '#1d4ed8', fontWeight: 500, margin: 2 }}>
+                    👤 {m.email || m.name || m}
+                  </span>
+                ))}
+                {(p.members || []).length > 3 && (
+                  <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 20, background: 'rgba(59,130,246,0.08)', fontSize: 11, color: '#3b82f6', margin: 2 }}>
+                    +{p.members.length - 3} more
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Btn variant="ghost" onClick={() => { setShowMember(p.id); setErr(''); }} size="sm" style={{ flex: 1, borderRadius: 10 }}>👤 Add Member</Btn>
+                <Btn variant="danger" onClick={() => deleteProject(p.id)} size="sm" style={{ borderRadius: 10 }}>🗑️</Btn>
+              </div>
+            </Glass>
+          ))}
+        </div>
+      )}
+
+      {showCreate && (
+        <Modal title="✨ New Project" onClose={() => setShowCreate(false)}>
+          {err && <Alert>{err}</Alert>}
+          <Field label="Project Name">
+            <Input placeholder="Website Redesign" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+          </Field>
+          <Field label="Description">
+            <Input placeholder="What's this project about?" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+          </Field>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <Btn variant="ghost" onClick={() => setShowCreate(false)} style={{ flex: 1 }}>Cancel</Btn>
+            <Btn onClick={createProject} disabled={loading} style={{ flex: 1 }}>{loading ? <Spinner /> : 'Create Project'}</Btn>
+          </div>
+        </Modal>
+      )}
+
+      {showMember && (
+        <Modal title="👤 Add Member" onClose={() => { setShowMember(null); setErr(''); }}>
+          {err && <Alert>{err}</Alert>}
+          <Field label="Member Email">
+            <Input type="email" placeholder="john@gmail.com" value={memberEmail} onChange={e => setMemberEmail(e.target.value)} />
+          </Field>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+            <Btn variant="ghost" onClick={() => setShowMember(null)} style={{ flex: 1 }}>Cancel</Btn>
+            <Btn onClick={addMember} disabled={loading} style={{ flex: 1 }}>{loading ? <Spinner /> : 'Add Member'}</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
