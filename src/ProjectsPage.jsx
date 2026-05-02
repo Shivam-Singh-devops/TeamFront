@@ -1,20 +1,34 @@
 import React, { useState } from 'react';
-import { apiCall } from './api';
+import { projectApi } from './api';
 import { Glass, Btn, Field, Input, Modal, Alert, Empty, PageHeader, SectionHeader, Spinner } from './components';
 
 export default function ProjectsPage({ token, projects, onRefresh }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showMember, setShowMember] = useState(null);
+  const [showDetails, setShowDetails] = useState(null);
+  const [projectDetails, setProjectDetails] = useState({});
   const [form, setForm] = useState({ name: '', description: '' });
   const [memberEmail, setMemberEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
 
+  async function loadProjectDetails(id) {
+    if (projectDetails[id]) return projectDetails[id];
+    try {
+      const details = await projectApi.get(id, token);
+      setProjectDetails(prev => ({ ...prev, [id]: details }));
+      return details;
+    } catch (e) {
+      console.error('Failed to load project details:', e);
+      return null;
+    }
+  }
+
   async function createProject() {
     if (!form.name.trim()) return setErr('Project name is required.');
     setLoading(true); setErr('');
     try {
-      await apiCall('/projects', 'POST', form, token);
+      await projectApi.create({ name: form.name.trim(), description: form.description.trim() || null }, token);
       setShowCreate(false); setForm({ name: '', description: '' }); onRefresh();
     } catch (e) { setErr(e.message); }
     finally { setLoading(false); }
@@ -22,7 +36,7 @@ export default function ProjectsPage({ token, projects, onRefresh }) {
 
   async function deleteProject(id) {
     if (!window.confirm('Delete this project and all its tasks?')) return;
-    try { await apiCall(`/projects/${id}`, 'DELETE', null, token); onRefresh(); }
+    try { await projectApi.delete(id, token); onRefresh(); }
     catch (e) { alert(e.message); }
   }
 
@@ -30,7 +44,7 @@ export default function ProjectsPage({ token, projects, onRefresh }) {
     if (!memberEmail.trim()) return setErr('Email is required.');
     setLoading(true); setErr('');
     try {
-      await apiCall(`/projects/${showMember}/members`, 'POST', { email: memberEmail }, token);
+      await projectApi.addMember(showMember, { email: memberEmail.trim() }, token);
       setShowMember(null); setMemberEmail(''); onRefresh();
     } catch (e) { setErr(e.message); }
     finally { setLoading(false); }
@@ -58,20 +72,13 @@ export default function ProjectsPage({ token, projects, onRefresh }) {
                 {p.description || 'No description provided.'}
               </div>
               <div style={{ marginBottom: 14, minHeight: 28 }}>
-                {(p.members || []).slice(0, 3).map((m, j) => (
-                  <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', fontSize: 11, color: '#1d4ed8', fontWeight: 500, margin: 2 }}>
-                    👤 {m.email || m.name || m}
-                  </span>
-                ))}
-                {(p.members || []).length > 3 && (
-                  <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 20, background: 'rgba(59,130,246,0.08)', fontSize: 11, color: '#3b82f6', margin: 2 }}>
-                    +{p.members.length - 3} more
-                  </span>
-                )}
+                <div style={{ fontSize: 11, color: '#60a5fa', marginBottom: 6 }}>Creator: {p.creatorEmail}</div>
+                <div style={{ fontSize: 11, color: '#4a7ab5' }}>Created: {new Date(p.createdDate).toLocaleDateString()}</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <Btn variant="ghost" onClick={() => { setShowMember(p.id); setErr(''); }} size="sm" style={{ flex: 1, borderRadius: 10 }}>👤 Add Member</Btn>
-                <Btn variant="danger" onClick={() => deleteProject(p.id)} size="sm" style={{ borderRadius: 10 }}>🗑️</Btn>
+                <Btn variant="ghost" onClick={() => { setShowDetails(p.id); loadProjectDetails(p.id); }} size="sm" style={{ flex: 1, borderRadius: 10 }}>👁️ View</Btn>
+                {p.canEdit && <Btn variant="ghost" onClick={() => { setShowMember(p.id); setErr(''); }} size="sm" style={{ borderRadius: 10 }}>👤 Add Member</Btn>}
+                {p.canEdit && <Btn variant="danger" onClick={() => deleteProject(p.id)} size="sm" style={{ borderRadius: 10 }}>🗑️</Btn>}
               </div>
             </Glass>
           ))}
@@ -91,6 +98,39 @@ export default function ProjectsPage({ token, projects, onRefresh }) {
             <Btn variant="ghost" onClick={() => setShowCreate(false)} style={{ flex: 1 }}>Cancel</Btn>
             <Btn onClick={createProject} disabled={loading} style={{ flex: 1 }}>{loading ? <Spinner /> : 'Create Project'}</Btn>
           </div>
+        </Modal>
+      )}
+
+      {showDetails && (
+        <Modal title="📁 Project Details" onClose={() => setShowDetails(null)}>
+          {projectDetails[showDetails] ? (
+            <div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#1e3a5f', marginBottom: 8 }}>{projectDetails[showDetails].name}</div>
+                <div style={{ color: '#4a7ab5', marginBottom: 12 }}>{projectDetails[showDetails].description || 'No description'}</div>
+                <div style={{ fontSize: 12, color: '#60a5fa' }}>Created: {new Date(projectDetails[showDetails].createdDate).toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: '#60a5fa' }}>Creator: {projectDetails[showDetails].creatorEmail}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#1e3a5f', marginBottom: 8 }}>Team Members ({projectDetails[showDetails].members.length})</div>
+                {projectDetails[showDetails].members.length === 0 ? (
+                  <div style={{ color: '#4a7ab5', fontSize: 13 }}>No members yet</div>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {projectDetails[showDetails].members.map((m, j) => (
+                      <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 20, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', fontSize: 12, color: '#1d4ed8', fontWeight: 500 }}>
+                        👤 {m.name} ({m.email}) - {m.role}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: 20 }}>
+              <Spinner /> <span style={{ marginLeft: 10 }}>Loading details…</span>
+            </div>
+          )}
         </Modal>
       )}
 

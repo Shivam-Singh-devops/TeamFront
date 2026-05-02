@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiCall, fmtDate, STATUS_COLORS } from './api';
+import { taskApi, projectApi, STATUS_COLORS, fmtDate } from './api';
 import { Glass, Btn, Field, Input, Select, Modal, Alert, Empty, PageHeader, SectionHeader, StatusBadge, Spinner } from './components';
 
 export default function TasksPage({ token, projects }) {
   const [selProject, setSelProject] = useState(null);
+  const [projectMembers, setProjectMembers] = useState([]);
+  const [isProjectAdmin, setIsProjectAdmin] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -16,13 +18,16 @@ export default function TasksPage({ token, projects }) {
   const loadTasks = useCallback(async (pid) => {
     setTasksLoading(true);
     try {
-      const [t, s] = await Promise.all([
-        apiCall(`/tasks/projects/${pid}`, 'GET', null, token),
-        apiCall(`/tasks/projects/${pid}/stats`, 'GET', null, token),
+      const [t, s, p] = await Promise.all([
+        taskApi.list(pid, token),
+        taskApi.stats(pid, token),
+        projectApi.get(pid, token),
       ]);
       setTasks(Array.isArray(t) ? t : []);
       setStats(s);
-    } catch { setTasks([]); setStats(null); }
+      setProjectMembers(p.members || []);
+      setIsProjectAdmin(p.canEdit || false);
+    } catch { setTasks([]); setStats(null); setProjectMembers([]); setIsProjectAdmin(false); }
     finally { setTasksLoading(false); }
   }, [token]);
 
@@ -32,26 +37,41 @@ export default function TasksPage({ token, projects }) {
 
   async function createTask() {
     if (!form.title.trim()) return setErr('Title is required.');
+    if (!form.assignedToUserId || isNaN(Number(form.assignedToUserId))) return setErr('Valid assigned user ID is required.');
     setLoading(true); setErr('');
     try {
-      await apiCall(`/tasks/projects/${selProject.id}`, 'POST', {
-        title: form.title, description: form.description,
-        assignedToUserId: form.assignedToUserId ? Number(form.assignedToUserId) : undefined,
-        dueDate: form.dueDate || undefined,
-      }, token);
+      const data = {
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        assignedToUserId: Number(form.assignedToUserId),
+        dueDate: form.dueDate || null,
+      };
+      await taskApi.create(selProject.id, data, token);
       setShowCreate(false); resetForm(); loadTasks(selProject.id);
     } catch (e) { setErr(e.message); }
     finally { setLoading(false); }
   }
 
   async function updateTask() {
+    if (!form.title.trim()) return setErr('Title is required.');
     setLoading(true); setErr('');
     try {
-      await apiCall(`/tasks/${editTask.id}`, 'PUT', {
-        title: form.title, description: form.description, status: form.status,
-        assignedToUserId: form.assignedToUserId ? Number(form.assignedToUserId) : undefined,
-        dueDate: form.dueDate || undefined,
-      }, token);
+      const data = {
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        status: form.status,
+        dueDate: form.dueDate || null,
+      };
+
+      // Only include assignedToUserId if user is admin or if it's different from current (indicating reassignment)
+      if (isProjectAdmin || (form.assignedToUserId && Number(form.assignedToUserId) !== editTask.assignedToUserId)) {
+        if (!form.assignedToUserId || isNaN(Number(form.assignedToUserId))) {
+          return setErr('Valid assigned user ID is required.');
+        }
+        data.assignedToUserId = Number(form.assignedToUserId);
+      }
+
+      await taskApi.update(editTask.id, data, token);
       setEditTask(null); loadTasks(selProject.id);
     } catch (e) { setErr(e.message); }
     finally { setLoading(false); }
@@ -59,13 +79,32 @@ export default function TasksPage({ token, projects }) {
 
   async function deleteTask(id) {
     if (!window.confirm('Delete this task?')) return;
-    try { await apiCall(`/tasks/${id}`, 'DELETE', null, token); loadTasks(selProject.id); }
+    try { await taskApi.delete(id, token); loadTasks(selProject.id); }
     catch (e) { alert(e.message); }
+  }
+
+  async function toggleTaskStatus(taskId, currentStatus) {
+    const statusCycle = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
+    const currentIndex = statusCycle.indexOf(currentStatus);
+    const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
+
+    try {
+      await taskApi.update(taskId, { status: nextStatus }, token);
+      loadTasks(selProject.id);
+    } catch (e) {
+      alert('Failed to update task status: ' + e.message);
+    }
   }
 
   function openEdit(t) {
     setEditTask(t);
-    setForm({ title: t.title, description: t.description || '', assignedToUserId: t.assignedToUserId || '', dueDate: t.dueDate ? t.dueDate.slice(0, 16) : '', status: t.status || 'TODO' });
+    setForm({
+      title: t.title,
+      description: t.description || '',
+      assignedToUserId: isProjectAdmin ? (t.assignedToUserId || '') : '',
+      dueDate: t.dueDate ? t.dueDate.slice(0, 16) : '',
+      status: t.status || 'TODO'
+    });
     setErr('');
   }
 
@@ -124,10 +163,16 @@ export default function TasksPage({ token, projects }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, color: '#1e3a5f', fontSize: 14, marginBottom: 2 }}>{t.title}</div>
                     <div style={{ fontSize: 12, color: '#4a7ab5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.description || 'No description'}</div>
+                    <div style={{ fontSize: 11, color: '#60a5fa', marginTop: 2 }}>👤 {t.assignedPersonName}</div>
                   </div>
                   <StatusBadge status={t.status} />
-                  <div style={{ fontSize: 11, color: '#60a5fa', flexShrink: 0 }}>📅 {fmtDate(t.dueDate)}</div>
+                  <div style={{ fontSize: 11, color: t.isOverdue ? '#ef4444' : '#60a5fa', flexShrink: 0, fontWeight: t.isOverdue ? 600 : 400 }}>
+                    📅 {fmtDate(t.dueDate)}{t.isOverdue && ' (Overdue)'}
+                  </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <Btn variant="ghost" onClick={() => toggleTaskStatus(t.id, t.status)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>
+                      {t.status === 'TODO' ? '▶️' : t.status === 'IN_PROGRESS' ? '⏸️' : '✅'}
+                    </Btn>
                     <Btn variant="ghost" onClick={() => openEdit(t)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>✏️</Btn>
                     <Btn variant="danger" onClick={() => deleteTask(t.id)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>🗑️</Btn>
                   </div>
@@ -148,7 +193,16 @@ export default function TasksPage({ token, projects }) {
           {err && <Alert>{err}</Alert>}
           <Field label="Title"><Input placeholder="Design Homepage" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></Field>
           <Field label="Description"><Input placeholder="Task details…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></Field>
-          <Field label="Assigned To (User ID)"><Input type="number" placeholder="2" value={form.assignedToUserId} onChange={e => setForm(f => ({ ...f, assignedToUserId: e.target.value }))} /></Field>
+          {(showCreate || (editTask && isProjectAdmin)) && (
+            <Field label="Assigned To (User ID)">
+              <Input type="number" placeholder="Enter user ID" value={form.assignedToUserId} onChange={e => setForm(f => ({ ...f, assignedToUserId: e.target.value }))} />
+              {projectMembers.length > 0 && (
+                <div style={{ fontSize: 11, color: '#4a7ab5', marginTop: 4 }}>
+                  Available members: {projectMembers.map(m => `${m.name} (ID needed)`).join(', ')}
+                </div>
+              )}
+            </Field>
+          )}
           <Field label="Due Date"><Input type="datetime-local" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} /></Field>
           {editTask && (
             <Field label="Status">

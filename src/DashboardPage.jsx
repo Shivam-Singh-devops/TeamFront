@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { apiCall } from './api';
+import { taskApi } from './api';
 import { Glass, PageHeader } from './components';
 
 function StatCard({ icon, val, label, color, delay = 0 }) {
@@ -24,7 +24,7 @@ export default function DashboardPage({ token, projects }) {
     async function load() {
       if (!projects.length) { setStats({ totalTasks: 0, completedTasks: 0, inProgressTasks: 0, todoTasks: 0, overdueTasks: 0, teamMembers: 0 }); return; }
       const results = await Promise.all(
-        projects.map(p => apiCall(`/tasks/projects/${p.id}/stats`, 'GET', null, token).catch(() => null))
+        projects.map(p => taskApi.stats(p.id, token).catch(() => null))
       );
       const valid = results.filter(Boolean);
       setAllStats(valid);

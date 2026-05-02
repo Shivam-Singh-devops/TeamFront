@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiCall } from './api';
+import { projectApi } from './api';
 import { BgOrbs } from './components';
 import AuthPage from './AuthPage';
 import DashboardPage from './DashboardPage';
@@ -23,7 +23,7 @@ export default function App() {
 
   const loadProjects = useCallback(async () => {
     if (!auth?.token) return;
-    try { const d = await apiCall('/projects', 'GET', null, auth.token); setProjects(Array.isArray(d) ? d : []); }
+    try { const d = await projectApi.list(auth.token); setProjects(Array.isArray(d) ? d : []); }
     catch { setProjects([]); }
   }, [auth]);
 
