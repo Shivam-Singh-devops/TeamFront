@@ -19,6 +19,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('ph_auth') || 'null'); } catch { return null; }
   });
   const [page, setPage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [projects, setProjects] = useState([]);
 
   const loadProjects = useCallback(async () => {
@@ -45,9 +46,16 @@ export default function App() {
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
       <BgOrbs />
-      <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
+      <div className="app-container" style={{ display: 'flex', minHeight: '100vh', position: 'relative', zIndex: 1 }}>
+        {/* Mobile header */}
+        <div className="mobile-header">
+          <button className="mobile-menu-btn" onClick={() => setSidebarOpen(open => !open)}>☰</button>
+          <div className="mobile-title">{NAV.find(n => n.id === page)?.label}</div>
+          <div style={{ width: 34 }} />
+        </div>
+
         {/* Sidebar */}
-        <div style={{
+        <div className={`app-sidebar ${sidebarOpen ? 'open' : ''}`} style={{
           width: 280, minHeight: '100vh', padding: '28px 18px', display: 'flex', flexDirection: 'column', gap: 8,
           background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
           borderRight: '1px solid rgba(249,115,22,0.18)', boxShadow: '8px 0 40px rgba(248,113,64,0.08)', flexShrink: 0,
@@ -69,7 +77,7 @@ export default function App() {
 
           {/* Nav items */}
           {NAV.map(n => (
-            <button key={n.id} onClick={() => setPage(n.id)} style={{
+            <button key={n.id} onClick={() => { setPage(n.id); setSidebarOpen(false); }} style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
               borderRadius: 18, cursor: 'pointer', transition: 'all 0.25s',
               color: page === n.id ? '#111827' : '#475569',
@@ -93,7 +101,7 @@ export default function App() {
             <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
               {auth.role}
             </div>
-            <button onClick={handleLogout} style={{
+            <button onClick={() => { handleLogout(); setSidebarOpen(false); }} style={{
               width: '100%', padding: 10, borderRadius: 12,
               border: '1px solid rgba(239,68,68,0.18)', background: 'rgba(239,68,68,0.08)',
               color: '#dc2626', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
@@ -108,7 +116,7 @@ export default function App() {
         </div>
 
         {/* Main content */}
-        <div style={{ flex: 1, padding: 28, overflowY: 'auto', maxHeight: '100vh' }}>
+        <div className="app-main" style={{ flex: 1, padding: 28, overflowY: 'auto', maxHeight: '100vh' }}>
           {page === 'dashboard' && <DashboardPage token={auth.token} projects={projects} />}
           {page === 'projects'  && <ProjectsPage  token={auth.token} projects={projects} onRefresh={loadProjects} />}
           {page === 'tasks'     && <TasksPage      token={auth.token} projects={projects} />}
