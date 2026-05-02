@@ -58,10 +58,10 @@ export default function MyTasksPage({ token }) {
             <Glass
               key={t.id}
               style={{
-                padding: '16px 20px',
+                padding: '20px 24px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
+                gap: 16,
                 transition: 'all 0.2s',
                 animation: `slideUp 0.3s ease ${i * 0.04}s both`,
               }}
@@ -70,17 +70,17 @@ export default function MyTasksPage({ token }) {
             >
               {/* Status dot */}
               <div style={{
-                width: 10, height: 10, borderRadius: '50%',
+                width: 12, height: 12, borderRadius: '50%',
                 background: STATUS_COLORS[t.status] || '#60a5fa',
                 flexShrink: 0,
               }} />
 
               {/* Task info */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, color: '#1e3a5f', fontSize: 14, marginBottom: 2 }}>
+                <div style={{ fontWeight: 600, color: '#1e3a5f', fontSize: 15, marginBottom: 4 }}>
                   {t.title}
                 </div>
-                <div style={{ fontSize: 12, color: '#4a7ab5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 13, color: '#4a7ab5', marginBottom: 4, lineHeight: 1.4 }}>
                   {t.description || 'No description'}
                   {t.assignedToUserName && (
                     <span style={{ marginLeft: 8, color: '#7dd3fc' }}>· 👤 {t.assignedToUserName}</span>
@@ -93,10 +93,11 @@ export default function MyTasksPage({ token }) {
 
               {/* Due date */}
               <div style={{
-                fontSize: 11,
+                fontSize: 12,
                 color: t.isOverdue ? '#ef4444' : '#60a5fa',
                 flexShrink: 0,
                 fontWeight: t.isOverdue ? 600 : 400,
+                marginLeft: 8,
               }}>
                 📅 {fmtDate(t.dueDate)}{t.isOverdue && ' ⚠️'}
               </div>
@@ -105,7 +106,7 @@ export default function MyTasksPage({ token }) {
               <button
                 onClick={() => toggleTaskStatus(t)}
                 style={{
-                  padding: '6px 14px',
+                  padding: '8px 16px',
                   borderRadius: 8,
                   border: '1px solid rgba(59,130,246,0.3)',
                   background: 'rgba(59,130,246,0.1)',
@@ -116,6 +117,7 @@ export default function MyTasksPage({ token }) {
                   transition: 'all 0.2s',
                   flexShrink: 0,
                   fontFamily: "'DM Sans', sans-serif",
+                  marginLeft: 8,
                 }}
                 onMouseEnter={e => {
                   e.target.style.background = 'rgba(59,130,246,0.2)';

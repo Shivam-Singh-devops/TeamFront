@@ -155,26 +155,26 @@ export default function TasksPage({ token, projects }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {tasks.map((t, i) => (
-                <Glass key={t.id} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s', animation: `slideUp 0.3s ease ${i * 0.04}s both` }}
+                <Glass key={t.id} style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.2s', animation: `slideUp 0.3s ease ${i * 0.04}s both` }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'}
                   onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
                 >
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: STATUS_COLORS[t.status] || '#60a5fa', flexShrink: 0 }} />
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: STATUS_COLORS[t.status] || '#60a5fa', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: '#1e3a5f', fontSize: 14, marginBottom: 2 }}>{t.title}</div>
-                    <div style={{ fontSize: 12, color: '#4a7ab5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.description || 'No description'}</div>
-                    <div style={{ fontSize: 11, color: '#60a5fa', marginTop: 2 }}>👤 {t.assignedPersonName}</div>
+                    <div style={{ fontWeight: 600, color: '#1e3a5f', fontSize: 15, marginBottom: 4 }}>{t.title}</div>
+                    <div style={{ fontSize: 13, color: '#4a7ab5', marginBottom: 4, lineHeight: 1.4 }}>{t.description || 'No description'}</div>
+                    <div style={{ fontSize: 12, color: '#60a5fa' }}>👤 {t.assignedPersonName}</div>
                   </div>
                   <StatusBadge status={t.status} />
-                  <div style={{ fontSize: 11, color: t.isOverdue ? '#ef4444' : '#60a5fa', flexShrink: 0, fontWeight: t.isOverdue ? 600 : 400 }}>
+                  <div style={{ fontSize: 12, color: t.isOverdue ? '#ef4444' : '#60a5fa', flexShrink: 0, fontWeight: t.isOverdue ? 600 : 400, marginLeft: 8 }}>
                     📅 {fmtDate(t.dueDate)}{t.isOverdue && ' (Overdue)'}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <Btn variant="ghost" onClick={() => toggleTaskStatus(t.id, t.status)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 8 }}>
+                    <Btn variant="ghost" onClick={() => toggleTaskStatus(t.id, t.status)} size="sm" style={{ padding: '8px 12px', borderRadius: 9 }}>
                       {t.status === 'TODO' ? '▶️' : t.status === 'IN_PROGRESS' ? '⏸️' : '✅'}
                     </Btn>
-                    <Btn variant="ghost" onClick={() => openEdit(t)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>✏️</Btn>
-                    <Btn variant="danger" onClick={() => deleteTask(t.id)} size="sm" style={{ padding: '6px 10px', borderRadius: 9 }}>🗑️</Btn>
+                    <Btn variant="ghost" onClick={() => openEdit(t)} size="sm" style={{ padding: '8px 12px', borderRadius: 9 }}>✏️</Btn>
+                    <Btn variant="danger" onClick={() => deleteTask(t.id)} size="sm" style={{ padding: '8px 12px', borderRadius: 9 }}>🗑️</Btn>
                   </div>
                 </Glass>
               ))}
