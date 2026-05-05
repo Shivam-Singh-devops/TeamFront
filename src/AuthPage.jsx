@@ -79,7 +79,7 @@ export default function AuthPage({ onLogin }) {
         {tab === 'register' && (
           <Field label="Role">
             <Select value={form.role} onChange={set('role')}>
-              <option value="USER">User</option>
+              {/* <option value="USER">User</option> */}
               <option value="ADMIN">Admin</option>
             </Select>
           </Field>
